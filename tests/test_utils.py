@@ -24,6 +24,37 @@ def test_filename_for_url(url, ext, expected):
 
 
 @pytest.mark.parametrize(
+    "width,height,expected",
+    (
+        (None, None, {}),
+        (0, 0, {}),
+        (640, None, {"width": 640, "height": 720}),
+        (None, 480, {"width": 1280, "height": 480}),
+        (800, 600, {"width": 800, "height": 600}),
+    ),
+)
+def test_get_viewport(width, height, expected):
+    from shot_scraper.cli import _get_viewport
+
+    assert _get_viewport(width, height) == expected
+
+
+@pytest.mark.parametrize(
+    "width,height",
+    (
+        (-1, 100),
+        (100, -1),
+        (-10, -10),
+    ),
+)
+def test_get_viewport_rejects_non_positive(width, height):
+    import click
+    from shot_scraper.cli import _get_viewport
+
+    with pytest.raises(click.ClickException, match="positive integers"):
+        _get_viewport(width, height)
+
+@pytest.mark.parametrize(
     "url,existing_files,expected",
     (
         ("https://datasette.io/", [], "datasette-io.png"),
