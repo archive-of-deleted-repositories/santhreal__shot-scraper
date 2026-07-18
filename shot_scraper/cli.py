@@ -851,6 +851,15 @@ def multi(
 
     scale_factor = normalize_scale_factor(retina, scale_factor)
     shots = yaml.safe_load(config)
+    if shots is None:
+        shots = []
+    if not isinstance(shots, list):
+        raise click.ClickException("YAML file must contain a list")
+    for i, shot in enumerate(shots):
+        if not isinstance(shot, dict):
+            raise click.ClickException(
+                f"YAML list item {i} must be a mapping, not {type(shot).__name__}"
+            )
 
     # Special case: if we are recording a har_file output can be blank to skip a shot
     if har_file:
@@ -860,10 +869,6 @@ def multi(
 
     server_processes = []
     server_needs_ready_check = False
-    if shots is None:
-        shots = []
-    if not isinstance(shots, list):
-        raise click.ClickException("YAML file must contain a list")
     with sync_playwright() as p:
         context, browser_obj = _browser_context(
             p,

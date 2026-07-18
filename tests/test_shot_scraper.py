@@ -329,6 +329,40 @@ def test_multi_error_on_non_list(input):
 
 
 @pytest.mark.parametrize(
+    "input,expected",
+    (
+        ("- just a string\n", "YAML list item 0 must be a mapping, not str"),
+        ("- 42\n", "YAML list item 0 must be a mapping, not int"),
+        (
+            "- url: https://example.com/\n- not-a-mapping\n",
+            "YAML list item 1 must be a mapping, not str",
+        ),
+    ),
+)
+def test_multi_error_on_non_mapping_item(input, expected):
+    runner = CliRunner()
+    result = runner.invoke(cli, ["multi", "-"], input=input)
+    assert result.exit_code == 1
+    assert expected in result.output
+
+
+def test_multi_har_file_rejects_non_mapping_before_playwright():
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["multi", "-", "--har-file", "out.har"], input="- just-a-string\n"
+    )
+    assert result.exit_code == 1
+    assert "YAML list item 0 must be a mapping, not str" in result.output
+
+
+def test_multi_har_empty_yaml_does_not_crash(mocker):
+    mocker.patch("shot_scraper.cli.sync_playwright")
+    runner = CliRunner()
+    result = runner.invoke(cli, ["multi", "-", "--har-file", "out.har"], input="")
+    assert result.exit_code == 0, str(result.exception)
+
+
+@pytest.mark.parametrize(
     "args,expected_shot_count",
     (
         ([], 2),
